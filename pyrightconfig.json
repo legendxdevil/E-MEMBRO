@@ -1,0 +1,9 @@
+{
+  "include": [
+    "services/api",
+    "scripts"
+  ],
+  "extraPaths": [
+    "services/api"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}/services/api",
+    "./services/api"
+  ],
+  "python.autoComplete.extraPaths": [
+    "${workspaceFolder}/services/api",
+    "./services/api"
+  ]
+}
