@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Edge Memory Platform - Master Demo & Benchmarking Script
+E-MEMBRO - Master Demo & Benchmarking Script
 Executes the full Section 24 & 25 scenario autonomously with real timing measurements.
 """
 
@@ -32,7 +32,7 @@ from app.services.conflict_service import ConflictService
 
 def run_demo():
     print("=" * 70)
-    print("EDGE MEMORY PLATFORM — MASTER DEMONSTRATION & BENCHMARK")
+    print("E-MEMBRO — MASTER DEMONSTRATION & BENCHMARK")
     print("=" * 70)
     print(f"Timestamp: {datetime.now(timezone.utc).isoformat()}")
     print(f"Environment: Python {sys.version.split()[0]} on {sys.platform}")

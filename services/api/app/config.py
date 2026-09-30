@@ -13,7 +13,7 @@ class Settings(BaseSettings):
         extra="ignore"
     )
 
-    APP_NAME: str = "Edge Memory Platform"
+    APP_NAME: str = "E-MEMBRO"
     APP_ENV: str = "development"
     DEBUG: bool = True
     PORT: int = 8000

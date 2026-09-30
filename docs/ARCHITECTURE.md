@@ -1,7 +1,7 @@
-# Edge Memory Platform — Architecture Specification
+# E-MEMBRO — Architecture Specification
 
 ## 1. Overview & Vision
-The **Edge Memory Platform** is an offline-first AI memory and intelligence platform designed to store notes, context, and operational data directly on edge devices (field tablets, laptops, IoT gateways). It provides **local semantic search** without internet connectivity, performs **selective cloud synchronization** based on privacy and priority policies, and intelligently detects and resolves **semantic contradictions** across multiple devices.
+The **E-MEMBRO** platform is an offline-first AI memory and intelligence platform designed to store notes, context, and operational data directly on edge devices (field tablets, laptops, IoT gateways). It provides **local semantic search** without internet connectivity, performs **selective cloud synchronization** based on privacy and priority policies, and intelligently detects and resolves **semantic contradictions** across multiple devices.
 
 ---
 

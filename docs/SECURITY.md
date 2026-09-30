@@ -1,4 +1,4 @@
-# Edge Memory Platform — Security & Privacy Architecture
+# E-MEMBRO — Security & Privacy Architecture
 
 ## 1. Core Threat Model & Privacy Invariants
 

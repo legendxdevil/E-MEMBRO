@@ -1,4 +1,4 @@
-# Edge Memory Platform — Test Plan & Benchmark Report
+# E-MEMBRO — Test Plan & Benchmark Report
 
 ## 1. Test Strategy Overview
 The testing architecture guarantees reliability across:

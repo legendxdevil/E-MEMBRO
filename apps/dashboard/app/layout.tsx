@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import Navbar from "../components/Navbar";
 
 export const metadata: Metadata = {
-  title: "Edge Memory Platform | AI-Powered Edge Intelligence",
+  title: "E-MEMBRO | AI-Powered Edge Intelligence Platform",
   description: "Offline-first AI memory system with local semantic retrieval, selective sync, and conflict resolution",
 };
 

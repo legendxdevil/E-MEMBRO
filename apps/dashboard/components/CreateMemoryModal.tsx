@@ -64,7 +64,7 @@ export default function CreateMemoryModal({ isOpen, onClose, onSuccess }: Create
       <div className="bg-paper border border-hairline rounded-3xl w-full max-w-lg shadow-popover overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         <div className="p-6 border-b border-hairline flex items-center justify-between">
           <div>
-            <h3 className="font-serif text-2xl font-normal text-ink">New Edge Memory</h3>
+            <h3 className="font-serif text-2xl font-normal text-ink">New E-MEMBRO Memory</h3>
             <p className="text-xs text-slate-gray mt-0.5">Record and locally embed knowledge on this edge node</p>
           </div>
           <button

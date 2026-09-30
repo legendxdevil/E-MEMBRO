@@ -1,4 +1,4 @@
-# Edge Memory Platform
+# E-MEMBRO
 
 > **AI-Powered Edge Memory & Intelligence Platform**  
 > *Edge AI that remembers, retrieves, and syncs smartly*

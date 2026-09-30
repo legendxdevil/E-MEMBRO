@@ -24,7 +24,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - APP_NAME=Edge Memory Platform
+      - APP_NAME=E-MEMBRO
       - APP_ENV=production
       - HOST=0.0.0.0
       - PORT=8000

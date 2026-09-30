@@ -1,4 +1,4 @@
-# Edge Memory Platform — API Reference Manual
+# E-MEMBRO — API Reference Manual
 
 Base URL: `http://localhost:8000/api/v1`
 

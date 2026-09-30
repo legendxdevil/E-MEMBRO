@@ -1,6 +1,6 @@
-# Edge Memory Platform --- Complete Functional & Logic Specification
+# E-MEMBRO --- Complete Functional & Logic Specification
 
-**Project:** AI-Powered Edge Memory & Intelligence Platform\
+**Project:** E-MEMBRO AI-Powered Edge Intelligence Platform\
 **Tagline:** *Edge AI that remembers, retrieves, and syncs smartly*\
 **Purpose:** Offline-first memory system that stores information
 on-device, supports semantic search without internet, selectively syncs

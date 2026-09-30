@@ -80,7 +80,7 @@ export default function Navbar() {
             </div>
             <div>
               <div className="font-serif text-lg tracking-tight text-ink flex items-center gap-2">
-                <span className="italic">Edge</span> Memory
+                <span className="italic">E-</span>MEMBRO
                 <span className="text-[10px] font-sans px-2 py-0.5 rounded-full bg-peach text-sienna font-medium">
                   LOCAL
                 </span>

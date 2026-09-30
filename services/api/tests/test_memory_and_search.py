@@ -30,7 +30,7 @@ def test_health_check(client):
     assert res.status_code == 200
     data = res.json()
     assert data["status"] == "healthy"
-    assert "Edge Memory Platform" in data["app"]
+    assert "E-MEMBRO" in data["app"]
 
 def test_create_memory_success(client):
     payload = {
