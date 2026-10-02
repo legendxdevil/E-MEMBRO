@@ -8,7 +8,9 @@ import {
   FileText,
   RefreshCw,
   AlertTriangle,
-  Search
+  Search,
+  Code,
+  Smartphone
 } from "lucide-react";
 import { api, ActivityEvent } from "../../lib/api";
 
@@ -20,7 +22,7 @@ export default function ActivityLogPage() {
   const loadActivity = async () => {
     try {
       const data = await api.listActivity(filterType || undefined, 100);
-      setEvents(data);
+      setEvents(data || []);
     } catch (e) {
       console.error(e);
     } finally {
@@ -37,56 +39,60 @@ export default function ActivityLogPage() {
   const getEventBadge = (type: string) => {
     if (type.startsWith("memory.")) {
       return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-normal bg-mist text-ink">
-          <FileText className="w-3 h-3 text-slate-gray" />
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-medium bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+          <FileText className="w-3 h-3 text-cyan-400" />
           {type}
         </span>
       );
     }
     if (type.startsWith("sync.")) {
       return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-normal bg-fog border border-hairline text-slate-gray">
-          <RefreshCw className="w-3 h-3 text-slate-gray" />
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-medium bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">
+          <RefreshCw className="w-3 h-3 text-indigo-400" />
           {type}
         </span>
       );
     }
     if (type.startsWith("conflict.")) {
       return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-medium bg-peach text-sienna">
-          <AlertTriangle className="w-3 h-3 text-sienna" />
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-medium bg-amber-500/15 text-amber-300 border border-amber-500/30">
+          <AlertTriangle className="w-3 h-3 text-amber-400" />
           {type}
         </span>
       );
     }
     if (type.startsWith("search.")) {
       return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-normal bg-mist text-ink">
-          <Search className="w-3 h-3 text-slate-gray" />
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-medium bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+          <Search className="w-3 h-3 text-emerald-400" />
           {type}
         </span>
       );
     }
     return (
-      <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs bg-fog text-slate-gray border border-hairline">
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono bg-white/5 text-slate-300 border border-white/10">
         {type}
       </span>
     );
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-300">
+    <div className="space-y-6 animate-in fade-in duration-300">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-hairline pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 glass-panel rounded-3xl p-6 md:p-8 border border-white/10 glow-border">
         <div>
-          <div className="text-xs uppercase tracking-wider text-ash-gray font-normal mb-1">
-            Audit Stream
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[11px] font-mono uppercase tracking-widest text-cyan-400 bg-cyan-500/10 px-2.5 py-0.5 rounded-full border border-cyan-500/20 font-semibold">
+              Tamper-Evident Audit Trail
+            </span>
+            <span className="text-slate-500">•</span>
+            <span className="text-xs font-mono text-slate-400">{events.length} Telemetry Events</span>
           </div>
-          <h1 className="font-serif text-3xl lg:text-4xl font-normal tracking-tight text-ink">
-            Audit & <span className="italic">Activity Log</span>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white">
+            Audit & Activity Stream
           </h1>
-          <p className="text-sm text-slate-gray mt-1 max-w-xl">
-            Chronological record of mutations, sync dispatches, and deterministic consensus traces.
+          <p className="text-xs md:text-sm text-slate-400 font-light mt-1">
+            Chronological audit log of memory mutations, selective sync events, and automated consensus traces.
           </p>
         </div>
 
@@ -95,7 +101,7 @@ export default function ActivityLogPage() {
           <select
             value={filterType}
             onChange={(e) => setFilterType(e.target.value)}
-            className="bg-mist rounded-full px-4 py-2 text-xs text-ink focus:outline-none cursor-pointer"
+            className="glass-input rounded-xl px-4 py-2 text-xs text-slate-200 focus:outline-none cursor-pointer"
           >
             <option value="">All Events</option>
             <option value="memory.created">Memory Created</option>
@@ -113,48 +119,51 @@ export default function ActivityLogPage() {
       </div>
 
       {/* Activity Feed Table */}
-      <div className="bg-paper border border-hairline rounded-3xl overflow-hidden shadow-artifact">
+      <div className="glass-panel rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
         {loading ? (
-          <div className="py-24 text-center text-slate-gray text-xs">Loading activity audit log...</div>
+          <div className="py-24 text-center text-slate-400 text-xs font-mono">Loading activity audit log from SQLite...</div>
         ) : events.length === 0 ? (
           <div className="py-24 text-center space-y-2">
-            <Activity className="w-8 h-8 text-ash-gray mx-auto" />
-            <div className="text-slate-gray text-xs">No audit events match your filter.</div>
+            <Activity className="w-8 h-8 text-slate-600 mx-auto" />
+            <div className="text-slate-400 text-xs font-mono">No audit events match your filter.</div>
           </div>
         ) : (
-          <div className="divide-y divide-hairline">
+          <div className="divide-y divide-white/5">
             {events.map((ev) => (
-              <div key={ev.id} className="p-6 hover:bg-fog/50 transition space-y-3">
+              <div key={ev.id} className="p-6 hover:bg-white/[0.02] transition space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-3">
                     {getEventBadge(ev.event_type)}
-                    <span className="text-xs text-ash-gray">
+                    <span className="text-xs font-mono text-slate-500">
                       ID: {ev.id.slice(0, 8)}...
                     </span>
                     {ev.memory_id && (
-                      <span className="text-xs text-slate-gray">
-                        Memory: <span className="text-ink font-mono">{ev.memory_id.slice(0, 8)}...</span>
+                      <span className="text-xs font-mono text-slate-400">
+                        Memory: <span className="text-cyan-300">{ev.memory_id.slice(0, 8)}...</span>
                       </span>
                     )}
                   </div>
-                  <div className="text-xs text-slate-gray flex items-center gap-1.5">
-                    <Clock className="w-3.5 h-3.5 text-ash-gray" />
+                  <div className="text-xs font-mono text-slate-400 flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-slate-500" />
                     {new Date(ev.created_at).toLocaleString()}
                   </div>
                 </div>
 
                 {/* Event Details JSON */}
-                <div className="bg-fog rounded-2xl p-4 text-xs font-mono text-ink border border-hairline overflow-x-auto">
-                  <div className="flex items-center justify-between text-slate-gray text-[11px] mb-2 border-b border-hairline pb-1.5">
-                    <span>Actor: {ev.actor_device_id}</span>
+                <div className="bg-black/50 rounded-2xl p-4 text-xs font-mono text-slate-300 border border-white/5 overflow-x-auto">
+                  <div className="flex items-center justify-between text-slate-500 text-[11px] mb-2 border-b border-white/5 pb-2">
+                    <span className="flex items-center gap-1.5">
+                      <Smartphone className="w-3 h-3 text-cyan-400" />
+                      Actor: {ev.actor_device_id}
+                    </span>
                     {ev.details?.text === "[REDACTED_PRIVATE_CONTENT]" && (
-                      <span className="text-sienna font-medium flex items-center gap-1 bg-peach px-2 py-0.5 rounded-full text-[10px]">
-                        <Lock className="w-3 h-3 text-sienna" />
+                      <span className="text-rose-400 font-medium flex items-center gap-1 bg-rose-500/15 px-2.5 py-0.5 rounded-full text-[10px] border border-rose-500/30">
+                        <Lock className="w-3 h-3 text-rose-400" />
                         Private Text Redacted by Policy
                       </span>
                     )}
                   </div>
-                  <pre className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">
+                  <pre className="text-xs text-slate-300 whitespace-pre-wrap leading-relaxed">
                     {JSON.stringify(ev.details, null, 2)}
                   </pre>
                 </div>

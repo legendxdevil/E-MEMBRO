@@ -4,7 +4,13 @@ import React, { useEffect, useState } from "react";
 import {
   Plus,
   Server,
-  X
+  X,
+  Smartphone,
+  Cpu,
+  CheckCircle2,
+  HardDrive,
+  Clock,
+  Sparkles
 } from "lucide-react";
 import { api, Device } from "../../lib/api";
 
@@ -19,7 +25,7 @@ export default function DevicesPage() {
   const loadDevices = async () => {
     try {
       const data = await api.listDevices();
-      setDevices(data);
+      setDevices(data || []);
     } catch (e) {
       console.error(e);
     } finally {
@@ -53,83 +59,87 @@ export default function DevicesPage() {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-300">
+    <div className="space-y-6 animate-in fade-in duration-300">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-hairline pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 glass-panel rounded-3xl p-6 md:p-8 border border-white/10 glow-border">
         <div>
-          <div className="text-xs uppercase tracking-wider text-ash-gray font-normal mb-1">
-            Hardware Topology
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[11px] font-mono uppercase tracking-widest text-cyan-400 bg-cyan-500/10 px-2.5 py-0.5 rounded-full border border-cyan-500/20 font-semibold">
+              Hardware Cluster Mesh
+            </span>
+            <span className="text-slate-500">•</span>
+            <span className="text-xs font-mono text-emerald-400">{devices.length} Nodes Registered</span>
           </div>
-          <h1 className="font-serif text-3xl lg:text-4xl font-normal tracking-tight text-ink">
-            Device <span className="italic">Registry</span>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white">
+            Device Mesh Registry
           </h1>
-          <p className="text-sm text-slate-gray mt-1 max-w-xl">
-            Physical edge nodes, local embedded vector stores, and peer synchronization state.
+          <p className="text-xs md:text-sm text-slate-400 font-light mt-1">
+            Physical edge hardware nodes, embedded vector stores, and peer synchronization states.
           </p>
         </div>
 
         <button
           onClick={() => setModalOpen(true)}
-          className="px-5 py-2.5 rounded-full text-xs font-normal bg-ink text-paper hover:bg-ink/85 flex items-center gap-2 transition shrink-0"
+          className="px-5 py-2.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 text-white shadow-glow flex items-center gap-2 transition duration-200 cursor-pointer self-start sm:self-center shrink-0 active:scale-95"
         >
-          <Plus className="w-3.5 h-3.5" />
-          Register Node
+          <Plus className="w-4 h-4" />
+          Enroll Node
         </button>
       </div>
 
       {/* Device Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {loading ? (
-          <div className="col-span-full py-24 text-center text-slate-gray text-xs">
-            Loading registered edge nodes...
+          <div className="col-span-full py-24 text-center text-slate-400 text-xs font-mono">
+            Scanning cluster registry for physical edge devices...
           </div>
         ) : devices.length === 0 ? (
-          <div className="col-span-full py-24 text-center text-slate-gray text-xs">
-            No devices registered.
+          <div className="col-span-full py-24 text-center text-slate-400 text-xs font-mono">
+            No devices enrolled in this local cluster.
           </div>
         ) : (
           devices.map((dev) => (
             <div
               key={dev.id}
-              className="bg-paper border border-hairline hover:border-slate-gray/30 rounded-3xl p-6 shadow-artifact flex flex-col justify-between h-full transition"
+              className="glass-panel rounded-3xl p-6 border border-white/10 hover:border-cyan-500/40 transition flex flex-col justify-between h-full group glow-border"
             >
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <div className="w-9 h-9 rounded-full bg-mist flex items-center justify-center text-ink">
-                    <Server className="w-4 h-4 text-slate-gray" />
+                  <div className="w-10 h-10 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 group-hover:scale-110 transition">
+                    <Server className="w-5 h-5" />
                   </div>
-                  <span className="flex items-center gap-1.5 text-xs text-emerald-700 bg-emerald-50 px-3 py-0.5 rounded-full">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="flex items-center gap-1.5 text-xs font-mono text-emerald-300 bg-emerald-500/15 px-3 py-1 rounded-full border border-emerald-500/30">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-glow-emerald" />
                     {dev.sync_status}
                   </span>
                 </div>
 
                 <div>
-                  <h3 className="font-serif text-xl font-normal text-ink">{dev.name}</h3>
-                  <div className="text-xs text-ash-gray mt-0.5 truncate">
-                    ID: {dev.id}
+                  <h3 className="text-lg font-bold text-white group-hover:text-cyan-300 transition">{dev.name}</h3>
+                  <div className="text-[11px] font-mono text-slate-500 mt-1 truncate">
+                    UUID: {dev.id}
                   </div>
                 </div>
               </div>
 
-              <div className="pt-4 mt-6 border-t border-hairline space-y-2 text-xs text-slate-gray">
-                <div className="flex justify-between">
-                  <span className="text-ash-gray">Form Factor:</span>
-                  <span className="text-ink font-normal">{dev.device_type}</span>
+              <div className="pt-4 mt-6 border-t border-white/5 space-y-2.5 text-xs font-mono text-slate-400">
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500">Form Factor:</span>
+                  <span className="text-slate-200 uppercase">{dev.device_type}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-ash-gray">Engine Version:</span>
-                  <span className="text-ink font-normal">v{dev.app_version}</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500">Engine Build:</span>
+                  <span className="text-cyan-400">v{dev.app_version}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-ash-gray">Last Seen:</span>
-                  <span className="text-ink font-normal">
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500">Heartbeat:</span>
+                  <span className="text-slate-200">
                     {new Date(dev.last_seen).toLocaleTimeString()}
                   </span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-ash-gray">Registered:</span>
-                  <span className="text-ink font-normal">
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500">Enrolled:</span>
+                  <span className="text-slate-200">
                     {new Date(dev.registered_at).toLocaleDateString()}
                   </span>
                 </div>
@@ -141,16 +151,16 @@ export default function DevicesPage() {
 
       {/* Register Modal */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 bg-ink/20 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-paper border border-hairline rounded-3xl w-full max-w-md shadow-popover p-6 space-y-5">
-            <div className="flex items-center justify-between border-b border-hairline pb-4">
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="glass-panel-elevated rounded-3xl w-full max-w-md shadow-popover p-6 space-y-5 border border-white/10 glow-border">
+            <div className="flex items-center justify-between border-b border-white/10 pb-4">
               <div>
-                <h3 className="font-serif text-2xl font-normal text-ink">Register Edge Node</h3>
-                <p className="text-xs text-slate-gray mt-0.5">Enroll a physical hardware client into cluster registry</p>
+                <h3 className="text-lg font-bold text-white">Enroll Edge Node</h3>
+                <p className="text-xs text-slate-400 font-mono">Register physical hardware into local cluster mesh</p>
               </div>
               <button
                 onClick={() => setModalOpen(false)}
-                className="w-8 h-8 rounded-full flex items-center justify-center text-slate-gray hover:text-ink hover:bg-mist transition"
+                className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -158,45 +168,45 @@ export default function DevicesPage() {
 
             <form onSubmit={handleRegister} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="block text-xs uppercase tracking-wider text-ash-gray font-normal">Node Display Name</label>
+                <label className="block text-xs font-mono uppercase tracking-wider text-slate-400 font-medium">Node Display Name</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. Field Tablet Alpha"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-paper border border-hairline rounded-2xl p-3.5 text-sm text-ink placeholder:text-smoke-gray focus:outline-none focus:border-ink"
+                  className="w-full glass-input rounded-xl p-3.5 text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="block text-xs uppercase tracking-wider text-ash-gray font-normal">Device Form Factor</label>
+                <label className="block text-xs font-mono uppercase tracking-wider text-slate-400 font-medium">Device Form Factor</label>
                 <select
                   value={deviceType}
                   onChange={(e) => setDeviceType(e.target.value)}
-                  className="w-full bg-paper border border-hairline rounded-2xl p-3 text-xs text-ink focus:outline-none focus:border-ink cursor-pointer"
+                  className="w-full glass-input rounded-xl p-3 text-xs text-slate-200 focus:outline-none cursor-pointer"
                 >
                   <option value="edge_device">Edge Device (General)</option>
                   <option value="field_laptop">Field Laptop</option>
-                  <option value="mobile_terminal">Mobile Terminal</option>
-                  <option value="gateway_hub">Gateway Hub</option>
+                  <option value="sensor_pod">Sensor Pod Node</option>
+                  <option value="tablet">Rugged Tablet</option>
                 </select>
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-hairline">
+              <div className="pt-3 border-t border-white/10 flex justify-end items-center gap-3">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="px-5 py-2 rounded-full text-xs font-normal text-ink border border-hairline hover:bg-mist transition"
+                  className="px-4 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-white hover:bg-white/5 transition"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-6 py-2 rounded-full text-xs font-normal bg-ink text-paper hover:bg-ink/85 transition"
+                  className="px-5 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 text-white shadow-glow transition disabled:opacity-50 cursor-pointer"
                 >
-                  {submitting ? "Registering..." : "Register Node"}
+                  {submitting ? "Enrolling..." : "Enroll Device"}
                 </button>
               </div>
             </form>
