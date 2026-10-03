@@ -1,7 +1,8 @@
 import os
+from typing import Any
 from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import Field
+from pydantic import Field, field_validator
 
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent.parent
 DATA_DIR = ROOT_DIR / "data"
@@ -25,12 +26,11 @@ class Settings(BaseSettings):
     DEVICE_TYPE: str = "edge_device"
     APP_VERSION: str = "1.0.0"
 
-    # Storage Paths
+    # Storage Paths & Cloud Qdrant
     SQLITE_DB_PATH: str = str(DATA_DIR / "edge_memory.db")
     EDGE_QDRANT_PATH: str = str(DATA_DIR / "qdrant_edge")
-    CLOUD_QDRANT_PATH: str = str(DATA_DIR / "qdrant_cloud")
-    CLOUD_QDRANT_URL: str = "http://localhost:6333"
-    USE_LOCAL_CLOUD_QDRANT: bool = True
+    QDRANT_CLOUD_URL: str
+    QDRANT_CLOUD_API_KEY: str
 
     # Vector & Embeddings
     EMBEDDING_MODEL: str = "BAAI/bge-small-en-v1.5"
@@ -61,9 +61,22 @@ class Settings(BaseSettings):
         "http://127.0.0.1:8000",
     ]
 
-settings = Settings()
+    @field_validator("CORS_ORIGINS", mode="before")
+    @classmethod
+    def assemble_cors_origins(cls, v: Any) -> list[str]:
+        if isinstance(v, str):
+            v = v.strip()
+            if v.startswith("[") and v.endswith("]"):
+                import json
+                try:
+                    return json.loads(v)
+                except Exception:
+                    pass
+            return [i.strip() for i in v.split(",") if i.strip()]
+        return v
+
+settings = Settings()  # type: ignore
 
 # Ensure data directories exist
 os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(settings.EDGE_QDRANT_PATH, exist_ok=True)
-os.makedirs(settings.CLOUD_QDRANT_PATH, exist_ok=True)

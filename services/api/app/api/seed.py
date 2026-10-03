@@ -10,10 +10,36 @@ router = APIRouter(prefix="/api/v1/seed", tags=["seed"])
 
 @router.post("/demo")
 def seed_demo_scenario(
-    request: Request
+    request: Request,
+    reset: bool = True
 ):
     mem_service = MemoryService()
     sync_service = SyncService()
+
+    if reset:
+        # Reset local and cloud vector stores
+        try:
+            mem_service.vector_store.clear()
+        except Exception as e:
+            print(f"Warning: could not clear local vector store: {e}")
+        try:
+            sync_service.cloud_vector.clear()
+        except Exception as e:
+            print(f"Warning: could not clear cloud vector store: {e}")
+
+        # Reset SQLite tables to clean slate
+        with mem_service.db.get_connection() as conn:
+            conn.execute("DELETE FROM conflict_records")
+            conn.execute("DELETE FROM sync_jobs")
+            conn.execute("DELETE FROM memory_versions")
+            conn.execute("DELETE FROM memories")
+            conn.execute("DELETE FROM activity_events")
+            conn.execute("DELETE FROM sync_acknowledgements")
+            conn.commit()
+
+        sync_service.set_offline_simulation(False)
+        sync_service.set_sync_enabled(True)
+        sync_service.reset_circuit_success()
 
     device_a_id = "00000000-0000-0000-0000-000000000001"
     device_b_id = "00000000-0000-0000-0000-000000000002"

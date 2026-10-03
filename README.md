@@ -33,7 +33,7 @@ An **offline-first AI memory system** that stores memories locally on edge devic
 | **Local Vector DB** | Qdrant Edge (Embedded Rust Core) | 100% local vector storage & cosine retrieval |
 | **Local Embeddings** | FastEmbed (`BAAI/bge-small-en-v1.5`) | 384-dimensional dense vectors on CPU via ONNX |
 | **Metadata & Queue** | SQLite (WAL mode, foreign keys) | Durable sync queue, version history, audit logs |
-| **Cloud Vector DB** | Qdrant Server (`qdrant/qdrant:v1.11.0`) | Shared cloud memory index |
+| **Cloud Vector DB** | Qdrant Cloud (Cluster hosted on GCP) | Shared cloud memory index |
 | **Containerization** | Docker, Docker Compose | Repeatable multi-container deployment |
 | **Testing** | Pytest, FastAPI TestClient | 20 automated tests passing |
 
@@ -44,9 +44,23 @@ An **offline-first AI memory system** that stores memories locally on edge devic
 ### 1. Prerequisites
 - Python 3.11+
 - Node.js 18+ & npm
+- Qdrant Cloud Account & Cluster (hosted on GCP)
 - Docker & Docker Compose (optional for containerized deployment)
 
-### 2. Run Locally (Fastest)
+### 2. Configure Qdrant Cloud & Environment
+Create a cluster on [Qdrant Cloud](https://cloud.qdrant.io/) (select GCP as cloud provider). Retrieve your cluster endpoint URL and API key, copy `.env.example` to `.env`, and fill in the values:
+
+```bash
+cp .env.example .env
+```
+
+Ensure `.env` contains:
+```env
+QDRANT_CLOUD_URL=https://your-cluster-id.gcp.cloud.qdrant.io:6333
+QDRANT_CLOUD_API_KEY=your-api-key-here
+```
+
+### 3. Run Locally (Fastest)
 
 #### Backend (FastAPI Edge Service)
 ```bash
@@ -56,6 +70,7 @@ python -m uvicorn app.main:app --app-dir services/api --reload --port 8000
 ```
 - API will be accessible at: `http://localhost:8000`
 - Interactive Swagger Docs: `http://localhost:8000/docs`
+- On boot, the server automatically checks connectivity to your Qdrant Cloud cluster and logs the result.
 
 #### Frontend (Next.js Dashboard)
 ```bash
@@ -69,14 +84,14 @@ npm run dev
 
 ## Run with Docker Compose
 
-To launch the complete infrastructure (Qdrant Server + Edge API + Dashboard):
+To launch the containerized Edge API and Dashboard:
 
 ```bash
 docker-compose up --build
 ```
 - Web Dashboard: `http://localhost:3000`
 - Edge API: `http://localhost:8000`
-- Qdrant Cloud Server: `http://localhost:6333/dashboard`
+- API connects directly to your Qdrant Cloud GCP cluster using `.env`.
 
 ---
 
@@ -145,8 +160,8 @@ cp .env.example .env
 | `DEVICE_ID` | `00000000-0000-0000-0000-000000000001` | Edge Node UUID |
 | `SQLITE_DB_PATH` | `data/edge_memory.db` | Local SQLite database file |
 | `EDGE_QDRANT_PATH` | `data/qdrant_edge` | Local embedded Qdrant storage |
-| `CLOUD_QDRANT_URL` | `http://localhost:6333` | Cloud Qdrant Server endpoint |
-| `USE_LOCAL_CLOUD_QDRANT`| `true` | Use isolated local cloud partition for offline testing |
+| `QDRANT_CLOUD_URL` | *(Required from .env)* | Qdrant Cloud cluster endpoint (e.g. `https://your-cluster-id.gcp.cloud.qdrant.io:6333`) |
+| `QDRANT_CLOUD_API_KEY` | *(Required from .env)* | Qdrant Cloud API access key |
 | `RATE_LIMIT_READ` | `60` | Max read/search requests per minute |
 | `RATE_LIMIT_WRITE` | `30` | Max create/update requests per minute |
 | `RATE_LIMIT_SYNC` | `10` | Max sync batch requests per minute |

@@ -14,7 +14,7 @@ from datetime import datetime, timezone, timedelta
 # Fix Windows console encoding
 if sys.platform == "win32":
     try:
-        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
     except Exception:
         pass
 
@@ -125,10 +125,9 @@ def run_demo():
     # STEP 4: Reconnect Network & Process Selective Sync
     # -------------------------------------------------------------
     print("\n[STEP 4] Reconnecting Network & Executing Selective Cloud Sync...")
-    sync_service.set_offline_simulation(False)
-
     t_sync_start = time.perf_counter()
-    sync_drain = sync_service.process_sync_queue(max_batch_size=50)
+    reconnect_res = sync_service.set_offline_simulation(False)
+    sync_drain = reconnect_res.get("queue_processed") or sync_service.process_sync_queue(max_batch_size=50)
     sync_duration = (time.perf_counter() - t_sync_start) * 1000
 
     print(f"  ✓ Sync Process Duration: {sync_duration:.2f} ms")
@@ -137,7 +136,8 @@ def run_demo():
 
     # Verify private memory never entered cloud store
     cloud_mem = mem_service.db.get_memory(mem_priv["id"])
-    print(f"  ✓ Privacy Verification: Memory '{mem_priv['id'][:8]}...' sync_state is '{cloud_mem['sync_state']}' (Zero cloud exposure)")
+    cloud_state = cloud_mem["sync_state"] if cloud_mem else "unknown"
+    print(f"  ✓ Privacy Verification: Memory '{mem_priv['id'][:8]}...' sync_state is '{cloud_state}' (Zero cloud exposure)")
 
     # -------------------------------------------------------------
     # STEP 5: Device B Creates Contradictory Statement
@@ -175,8 +175,12 @@ def run_demo():
         # Verify version preservation
         losing_mem = mem_service.db.get_memory(c["memory_a_id"])
         winning_mem = mem_service.db.get_memory(c["memory_b_id"])
-        print(f"  ✓ Preserved Losing Version: '{losing_mem['text']}' -> Status: '{losing_mem['status']}' (NOT DELETED)")
-        print(f"  ✓ Authoritative Winning Version: '{winning_mem['text']}' -> Status: '{winning_mem['status']}'")
+        losing_text = losing_mem["text"] if losing_mem else "Unknown"
+        losing_status = losing_mem["status"] if losing_mem else "Unknown"
+        winning_text = winning_mem["text"] if winning_mem else "Unknown"
+        winning_status = winning_mem["status"] if winning_mem else "Unknown"
+        print(f"  ✓ Preserved Losing Version: '{losing_text}' -> Status: '{losing_status}' (NOT DELETED)")
+        print(f"  ✓ Authoritative Winning Version: '{winning_text}' -> Status: '{winning_status}'")
 
     # -------------------------------------------------------------
     # STEP 7: Benchmark Summary

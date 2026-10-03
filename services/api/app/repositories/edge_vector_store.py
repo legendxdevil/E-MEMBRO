@@ -1,12 +1,17 @@
 import os
+import shutil
 from abc import ABC, abstractmethod
 from typing import Optional, Any
 from pathlib import Path
-import qdrant_client
-from qdrant_client.models import (
-    VectorParams,
+from qdrant_edge import (
+    EdgeShard,
+    EdgeConfig,
+    EdgeVectorParams,
     Distance,
-    PointStruct,
+    Point,
+    UpdateOperation,
+    QueryRequest,
+    Query,
     Filter,
     FieldCondition,
     MatchValue,
@@ -40,47 +45,59 @@ class EdgeVectorStoreAdapter(ABC):
 
 class QdrantEdgeVectorStore(EdgeVectorStoreAdapter):
     """
-    Local Edge Vector Storage adapter using embedded Qdrant (disk-backed).
-    Runs 100% locally on-device without needing internet connectivity or external server.
+    Local Edge Vector Storage adapter using official Qdrant Edge (qdrant-edge-py).
+    Runs 100% locally in-process on-device using EdgeShard without external server.
     """
-    _clients: dict[str, qdrant_client.QdrantClient] = {}
+    _shards: dict[str, EdgeShard] = {}
 
     def __init__(self, storage_path: Optional[str] = None, collection_name: Optional[str] = None):
-        self.storage_path = str(storage_path or settings.EDGE_QDRANT_PATH)
-        self.collection_name = collection_name or settings.LOCAL_COLLECTION_NAME
+        base_path = Path(storage_path or settings.EDGE_QDRANT_PATH)
+        if collection_name:
+            self.storage_path = str(base_path / collection_name)
+        else:
+            self.storage_path = str(base_path)
         self.dimension = settings.VECTOR_DIMENSION
 
         Path(self.storage_path).mkdir(parents=True, exist_ok=True)
-        if self.storage_path not in self._clients:
-            self._clients[self.storage_path] = qdrant_client.QdrantClient(path=self.storage_path)
-        self.client = self._clients[self.storage_path]
-        self._ensure_collection()
+        if self.storage_path not in self._shards:
+            self._shards[self.storage_path] = self._get_or_create_shard()
+        self.shard = self._shards[self.storage_path]
 
-    def _ensure_collection(self) -> None:
-        collections = self.client.get_collections().collections
-        exists = any(c.name == self.collection_name for c in collections)
-        if not exists:
-            self.client.create_collection(
-                collection_name=self.collection_name,
-                vectors_config=VectorParams(size=self.dimension, distance=Distance.COSINE)
-            )
+    def _get_or_create_shard(self) -> EdgeShard:
+        p = Path(self.storage_path)
+        p.mkdir(parents=True, exist_ok=True)
+        config = EdgeConfig(
+            vectors={"": EdgeVectorParams(size=self.dimension, distance=Distance.Cosine)}
+        )
+        if any(p.iterdir()):
+            try:
+                return EdgeShard.load(self.storage_path)
+            except Exception:
+                for item in p.iterdir():
+                    if item.is_dir():
+                        shutil.rmtree(item, ignore_errors=True)
+                    else:
+                        try:
+                            item.unlink(missing_ok=True)
+                        except Exception:
+                            pass
+                return EdgeShard.create(self.storage_path, config)
+        return EdgeShard.create(self.storage_path, config)
 
     def upsert(self, point_id: str, vector: list[float], payload: dict[str, Any]) -> None:
-        point = PointStruct(
+        point = Point(
             id=point_id,
             vector=vector,
             payload=payload
         )
-        self.client.upsert(
-            collection_name=self.collection_name,
-            points=[point]
+        self.shard.update(
+            UpdateOperation.upsert_points([point])
         )
 
     def delete(self, point_id: str) -> bool:
         try:
-            self.client.delete(
-                collection_name=self.collection_name,
-                points_selector=[point_id]
+            self.shard.update(
+                UpdateOperation.delete_points([point_id])
             )
             return True
         except Exception:
@@ -107,16 +124,17 @@ class QdrantEdgeVectorStore(EdgeVectorStoreAdapter):
             if must_conditions:
                 query_filter = Filter(must=must_conditions)
 
-        res = self.client.query_points(
-            collection_name=self.collection_name,
-            query=query_vector,
+        req = QueryRequest(
             limit=limit,
+            query=Query.Nearest(query_vector),
+            filter=query_filter,
             score_threshold=score_threshold,
-            query_filter=query_filter
+            with_payload=True
         )
 
+        scored_points = self.shard.query(req)
         results = []
-        for p in res.points:
+        for p in scored_points:
             results.append({
                 "id": str(p.id),
                 "score": float(p.score),
@@ -126,7 +144,11 @@ class QdrantEdgeVectorStore(EdgeVectorStoreAdapter):
 
     def clear(self) -> None:
         try:
-            self.client.delete_collection(collection_name=self.collection_name)
+            self.shard.close()
         except Exception:
             pass
-        self._ensure_collection()
+        if os.path.exists(self.storage_path):
+            shutil.rmtree(self.storage_path, ignore_errors=True)
+        self.shard = self._get_or_create_shard()
+        self._shards[self.storage_path] = self.shard
+

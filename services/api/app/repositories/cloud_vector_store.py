@@ -2,16 +2,16 @@ import os
 from abc import ABC, abstractmethod
 from typing import Optional, Any
 from pathlib import Path
-import qdrant_client
-from qdrant_client.models import (
-    VectorParams,
-    Distance,
-    PointStruct,
-    Filter,
-    FieldCondition,
-    MatchValue,
-    MatchAny,
-)
+from qdrant_client import QdrantClient, models  # type: ignore
+
+VectorParams = models.VectorParams
+Distance = models.Distance
+PointStruct = models.PointStruct
+Filter = models.Filter
+FieldCondition = models.FieldCondition
+MatchValue = models.MatchValue
+MatchAny = models.MatchAny
+
 from app.config import settings
 
 class CloudVectorStoreAdapter(ABC):
@@ -37,43 +37,41 @@ class CloudVectorStoreAdapter(ABC):
     def is_available(self) -> bool:
         pass
 
+    @abstractmethod
+    def clear(self) -> None:
+        pass
+
 
 class QdrantCloudVectorStore(CloudVectorStoreAdapter):
     """
-    Cloud Vector Storage adapter.
-    Can connect to remote Qdrant Server (e.g., http://localhost:6333) or run
-    in local isolated cloud partition mode for testing and air-gapped demos.
+    Cloud Vector Storage adapter for Qdrant Cloud cluster (hosted on GCP).
+    Initializes QdrantClient using settings.QDRANT_CLOUD_URL and settings.QDRANT_CLOUD_API_KEY.
     """
-    _clients: dict[str, qdrant_client.QdrantClient] = {}
+    _clients: dict[str, QdrantClient] = {}
 
-    def __init__(self, cloud_url: Optional[str] = None, storage_path: Optional[str] = None):
-        self.cloud_url = cloud_url or settings.CLOUD_QDRANT_URL
-        self.storage_path = str(storage_path or settings.CLOUD_QDRANT_PATH)
+    def __init__(self, cloud_url: Optional[str] = None, api_key: Optional[str] = None):
+        self.cloud_url = cloud_url or settings.QDRANT_CLOUD_URL
+        self.api_key = api_key or settings.QDRANT_CLOUD_API_KEY
         self.collection_name = settings.CLOUD_COLLECTION_NAME
         self.dimension = settings.VECTOR_DIMENSION
-        self.client: Optional[qdrant_client.QdrantClient] = None
+        self.client: Optional[QdrantClient] = None
         self._init_client()
 
     def _init_client(self) -> None:
-        if settings.USE_LOCAL_CLOUD_QDRANT:
-            Path(self.storage_path).mkdir(parents=True, exist_ok=True)
-            if self.storage_path not in self._clients:
-                self._clients[self.storage_path] = qdrant_client.QdrantClient(path=self.storage_path)
-            self.client = self._clients[self.storage_path]
+        try:
+            client_key = f"{self.cloud_url}:{self.api_key}"
+            if client_key not in self._clients:
+                if self.cloud_url == ":memory:":
+                    self._clients[client_key] = QdrantClient(":memory:")
+                else:
+                    self._clients[client_key] = QdrantClient(
+                        url=self.cloud_url,
+                        api_key=self.api_key
+                    )
+            self.client = self._clients[client_key]
             self._ensure_collection()
-        else:
-            try:
-                if self.cloud_url not in self._clients:
-                    self._clients[self.cloud_url] = qdrant_client.QdrantClient(url=self.cloud_url, timeout=3.0)
-                self.client = self._clients[self.cloud_url]
-                self._ensure_collection()
-            except Exception as e:
-                # If remote server not up, fall back to isolated cloud storage path
-                Path(self.storage_path).mkdir(parents=True, exist_ok=True)
-                if self.storage_path not in self._clients:
-                    self._clients[self.storage_path] = qdrant_client.QdrantClient(path=self.storage_path)
-                self.client = self._clients[self.storage_path]
-                self._ensure_collection()
+        except Exception as e:
+            print(f"[Qdrant Cloud] Initialization warning: {e}")
 
     def _ensure_collection(self) -> None:
         if not self.client:
@@ -162,3 +160,12 @@ class QdrantCloudVectorStore(CloudVectorStoreAdapter):
                 "payload": p.payload or {}
             })
         return results
+
+    def clear(self) -> None:
+        if self.client:
+            try:
+                self.client.delete_collection(collection_name=self.collection_name)
+            except Exception:
+                pass
+            self._ensure_collection()
+

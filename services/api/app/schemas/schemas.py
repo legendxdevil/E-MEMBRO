@@ -210,6 +210,8 @@ class SyncStatusResponse(BaseModel):
     sync_enabled: bool
     offline_simulation: bool
     circuit_breaker_open: bool
+    circuit_breaker_state: Optional[str] = "CLOSED"
+    circuit_breaker_cooldown_remaining: Optional[float] = 0.0
     pending_jobs_count: int
     failed_jobs_count: int
     succeeded_jobs_count: int

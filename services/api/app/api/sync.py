@@ -55,8 +55,12 @@ def toggle_offline_simulation(
     service: SyncService = Depends(get_sync_service)
 ):
     rate_limiter.check_rate_limit(request, "write")
-    service.set_offline_simulation(req.offline)
-    return {"offline_simulation": req.offline, "message": f"Offline simulation set to {req.offline}"}
+    res = service.set_offline_simulation(req.offline)
+    return {
+        "offline_simulation": req.offline,
+        "message": f"Offline simulation set to {req.offline}",
+        "queue_processed": res.get("queue_processed")
+    }
 
 @router.post("/toggle")
 def toggle_sync(
@@ -65,8 +69,12 @@ def toggle_sync(
     service: SyncService = Depends(get_sync_service)
 ):
     rate_limiter.check_rate_limit(request, "write")
-    service.set_sync_enabled(req.enabled)
-    return {"sync_enabled": req.enabled, "message": f"Sync enabled set to {req.enabled}"}
+    res = service.set_sync_enabled(req.enabled)
+    return {
+        "sync_enabled": req.enabled,
+        "message": f"Sync enabled set to {req.enabled}",
+        "queue_processed": res.get("queue_processed")
+    }
 
 @router.get("/jobs", response_model=list[SyncJobResponse])
 def list_sync_jobs(

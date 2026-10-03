@@ -29,7 +29,7 @@ def get_metrics(
 ):
     rate_limiter.check_rate_limit(request, "read")
     metrics_data = db.get_metrics()
-    offline_sim = db.get_setting("offline_simulation", "false").lower() == "true"
+    offline_sim = (db.get_setting("offline_simulation", "false") or "false").lower() == "true"
     is_online = not offline_sim and not settings.OFFLINE_SIMULATION
 
     return MetricsResponse(

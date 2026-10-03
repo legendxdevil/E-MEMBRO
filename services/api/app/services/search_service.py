@@ -83,7 +83,7 @@ class SearchService:
         duration_ms = (time.perf_counter() - start_time) * 1000
 
         # Step 5: Privacy-safe activity logging (sanitize query text)
-        is_offline = self.db.get_setting("offline_simulation", "false").lower() == "true" or settings.OFFLINE_SIMULATION
+        is_offline = (self.db.get_setting("offline_simulation", "false") or "false").lower() == "true" or settings.OFFLINE_SIMULATION
 
         self.db.record_activity(
             event_type=ActivityEventType.SEARCH_COMPLETED.value,

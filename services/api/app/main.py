@@ -16,13 +16,46 @@ from app.api.devices import router as devices_router
 from app.api.activity import router as activity_router
 from app.api.seed import router as seed_router
 
+from contextlib import asynccontextmanager
+from app.repositories.cloud_vector_store import QdrantCloudVectorStore
+import logging
+
+logger = logging.getLogger("uvicorn.error")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Startup connectivity check against Qdrant Cloud store.
+    Verifies cluster accessibility via client.get_collections() and logs result.
+    """
+    logger.info("Initializing E-MEMBRO services and checking Qdrant Cloud connection...")
+    try:
+        store = QdrantCloudVectorStore()
+        if store.client is not None:
+            res = store.client.get_collections()
+            collection_names = [c.name for c in res.collections]
+            msg = f"[OK] [Qdrant Cloud] SUCCESS: Connected to Qdrant Cloud cluster ({settings.QDRANT_CLOUD_URL}). Collections: {collection_names}"
+            logger.info(msg)
+            print(msg)
+        else:
+            msg = f"[ERROR] [Qdrant Cloud] FAILURE: Client could not be initialized for {settings.QDRANT_CLOUD_URL}."
+            logger.error(msg)
+            print(msg)
+    except Exception as exc:
+        msg = f"[ERROR] [Qdrant Cloud] FAILURE: Unable to connect to Qdrant Cloud cluster at {settings.QDRANT_CLOUD_URL}. Error: {exc}"
+        logger.error(msg)
+        print(msg)
+    yield
+
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
     description="Offline-first AI memory system that stores on-device, retrieves semantically without internet, selectively syncs, and resolves multi-device conflicts.",
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
+    lifespan=lifespan
 )
+
 
 # CORS Configuration
 app.add_middleware(

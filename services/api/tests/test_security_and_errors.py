@@ -17,11 +17,10 @@ def client():
     test_dir = tempfile.mkdtemp(prefix="edge_sec_test_")
     test_db = os.path.join(test_dir, "test_sec.db")
     test_qdrant_edge = os.path.join(test_dir, "qdrant_edge")
-    test_qdrant_cloud = os.path.join(test_dir, "qdrant_cloud")
-
     settings.SQLITE_DB_PATH = test_db
     settings.EDGE_QDRANT_PATH = test_qdrant_edge
-    settings.CLOUD_QDRANT_PATH = test_qdrant_cloud
+    settings.QDRANT_CLOUD_URL = ":memory:"
+    settings.QDRANT_CLOUD_API_KEY = "test-api-key"
 
     with TestClient(app) as test_client:
         yield test_client

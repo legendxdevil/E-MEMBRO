@@ -21,12 +21,10 @@ def client():
     test_dir = tempfile.mkdtemp(prefix="edge_sync_test_")
     test_db = os.path.join(test_dir, "test_sync.db")
     test_qdrant_edge = os.path.join(test_dir, "qdrant_edge")
-    test_qdrant_cloud = os.path.join(test_dir, "qdrant_cloud")
-
     settings.SQLITE_DB_PATH = test_db
     settings.EDGE_QDRANT_PATH = test_qdrant_edge
-    settings.CLOUD_QDRANT_PATH = test_qdrant_cloud
-    settings.USE_LOCAL_CLOUD_QDRANT = True
+    settings.QDRANT_CLOUD_URL = ":memory:"
+    settings.QDRANT_CLOUD_API_KEY = "test-api-key"
 
     with TestClient(app) as test_client:
         yield test_client
@@ -209,6 +207,46 @@ def test_offline_simulation_toggle(client):
     client.post("/api/v1/sync/offline-simulation", json={"offline": False})
     status_res2 = client.get("/api/v1/sync/status").json()
     assert status_res2["is_online"] is True
+
+def test_offline_toggle_auto_processes_pending_queue(client):
+    # 1. Turn simulated-offline ON
+    res_off = client.post("/api/v1/sync/offline-simulation", json={"offline": True})
+    assert res_off.status_code == 200
+
+    # 2. Add a memory while simulated-offline
+    mem_res = client.post("/api/v1/memories", json={
+        "text": "Zone 4 secondary generator online and nominal.",
+        "category": "important",
+        "privacy": "sync_allowed",
+        "tags": ["power", "generator"]
+    })
+    assert mem_res.status_code == 201
+    memory = mem_res.json()
+    mem_id = memory["id"]
+
+    # 3. Confirm it's pending in memory and sync queue
+    assert memory["sync_state"] == "pending"
+    sync_status_before = client.get("/api/v1/sync/status").json()
+    assert sync_status_before["is_online"] is False
+    assert sync_status_before["pending_jobs_count"] >= 1
+
+    jobs = client.get("/api/v1/sync/jobs?status=pending").json()
+    assert any(j["memory_id"] == mem_id for j in jobs)
+
+    # 4. Turn simulated-offline OFF (back online)
+    res_on = client.post("/api/v1/sync/offline-simulation", json={"offline": False})
+    assert res_on.status_code == 200
+
+    # 5. Assert the queue processes and the item's status changes to synced
+    mem_after = client.get(f"/api/v1/memories/{mem_id}").json()
+    assert mem_after["sync_state"] == "synced"
+
+    sync_status_after = client.get("/api/v1/sync/status").json()
+    assert sync_status_after["is_online"] is True
+    assert sync_status_after["pending_jobs_count"] == 0
+
+    succeeded_jobs = client.get("/api/v1/sync/jobs?status=succeeded").json()
+    assert any(j["memory_id"] == mem_id for j in succeeded_jobs)
 
 def test_activity_log_privacy_redaction(client):
     # Fetch activity log

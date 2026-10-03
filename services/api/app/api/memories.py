@@ -50,7 +50,7 @@ def list_memories(
         page_size=page_size
     )
     return MemoryListResponse(
-        memories=memories,
+        memories=[MemoryResponse(**m) for m in memories],
         total=total,
         page=page,
         page_size=page_size

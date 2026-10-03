@@ -20,6 +20,10 @@ from app.services.embedding_service import EmbeddingService
 from app.services.conflict_service import ConflictService
 
 class SyncService:
+    # Class-level Circuit Breaker state (shared across all request instances)
+    _consecutive_failures: int = 0
+    _circuit_open_until: Optional[datetime] = None
+
     def __init__(
         self,
         db_repo: Optional[SQLiteRepository] = None,
@@ -33,13 +37,9 @@ class SyncService:
         self.conflict = conflict_service or ConflictService(db_repo=self.db, cloud_vector_store=self.cloud_vector)
         self.device_id = settings.DEVICE_ID
 
-        # Circuit Breaker state
-        self.consecutive_failures = 0
-        self.circuit_open_until: Optional[datetime] = None
-
     def is_online(self) -> bool:
         # Check runtime offline simulation setting first
-        sim_val = self.db.get_setting("offline_simulation", "false")
+        sim_val = self.db.get_setting("offline_simulation", "false") or "false"
         if sim_val.lower() == "true":
             return False
         if settings.OFFLINE_SIMULATION:
@@ -47,44 +47,80 @@ class SyncService:
         return True
 
     def is_sync_enabled(self) -> bool:
-        enabled_val = self.db.get_setting("sync_enabled", "true")
+        enabled_val = self.db.get_setting("sync_enabled", "true") or "true"
         return enabled_val.lower() == "true" and settings.SYNC_ENABLED
 
-    def set_offline_simulation(self, enabled: bool) -> None:
+    def set_offline_simulation(self, enabled: bool) -> dict[str, Any]:
         self.db.set_setting("offline_simulation", "true" if enabled else "false")
         self.db.record_activity(
             event_type="network.status_changed",
             actor_device_id=self.device_id,
             details={"offline_simulation": enabled}
         )
+        queue_result = None
+        if not enabled:
+            # Deliberate user action to go online: reset circuit breaker immediately
+            self.reset_circuit_success()
+            # Explicitly trigger immediate queue processing
+            if self.is_sync_enabled():
+                queue_result = self.process_sync_queue(max_batch_size=50)
+        return {
+            "offline_simulation": enabled,
+            "queue_processed": queue_result
+        }
 
-    def set_sync_enabled(self, enabled: bool) -> None:
+    def set_sync_enabled(self, enabled: bool) -> dict[str, Any]:
         self.db.set_setting("sync_enabled", "true" if enabled else "false")
         self.db.record_activity(
             event_type="sync.setting_changed",
             actor_device_id=self.device_id,
             details={"sync_enabled": enabled}
         )
+        queue_result = None
+        if enabled:
+            if self.is_online():
+                queue_result = self.process_sync_queue(max_batch_size=50)
+        return {
+            "sync_enabled": enabled,
+            "queue_processed": queue_result
+        }
 
-    def is_circuit_breaker_open(self) -> bool:
-        if self.circuit_open_until is not None:
-            if datetime.now(timezone.utc) < self.circuit_open_until:
+    @classmethod
+    def is_circuit_breaker_open(cls) -> bool:
+        if cls._circuit_open_until is not None:
+            if datetime.now(timezone.utc) < cls._circuit_open_until:
                 return True
             else:
                 # Cooldown expired, half-open probe
-                self.circuit_open_until = None
-                self.consecutive_failures = 0
+                cls._circuit_open_until = None
+                cls._consecutive_failures = 0
         return False
 
-    def trigger_circuit_failure(self) -> None:
-        self.consecutive_failures += 1
-        if self.consecutive_failures >= settings.CIRCUIT_BREAKER_FAIL_THRESHOLD:
-            self.circuit_open_until = datetime.now(timezone.utc) + timedelta(seconds=settings.CIRCUIT_BREAKER_COOLDOWN_SECONDS)
-            print(f"Warning: Circuit breaker tripped OPEN until {self.circuit_open_until.isoformat()}")
+    @classmethod
+    def trigger_circuit_failure(cls) -> None:
+        cls._consecutive_failures += 1
+        if cls._consecutive_failures >= settings.CIRCUIT_BREAKER_FAIL_THRESHOLD:
+            cls._circuit_open_until = datetime.now(timezone.utc) + timedelta(seconds=settings.CIRCUIT_BREAKER_COOLDOWN_SECONDS)
+            print(f"Warning: Circuit breaker tripped OPEN until {cls._circuit_open_until.isoformat()}")
 
-    def reset_circuit_success(self) -> None:
-        self.consecutive_failures = 0
-        self.circuit_open_until = None
+    @classmethod
+    def reset_circuit_success(cls) -> None:
+        cls._consecutive_failures = 0
+        cls._circuit_open_until = None
+
+    @classmethod
+    def get_circuit_breaker_status(cls) -> dict[str, Any]:
+        is_open = cls.is_circuit_breaker_open()
+        remaining_cooldown = 0.0
+        if cls._circuit_open_until is not None:
+            now = datetime.now(timezone.utc)
+            if now < cls._circuit_open_until:
+                remaining_cooldown = max(0.0, round((cls._circuit_open_until - now).total_seconds(), 1))
+        return {
+            "state": "OPEN" if is_open else "CLOSED",
+            "consecutive_failures": cls._consecutive_failures,
+            "remaining_cooldown_seconds": remaining_cooldown
+        }
 
     def get_sync_status(self) -> dict[str, Any]:
         with self.db.get_connection() as conn:
@@ -98,11 +134,15 @@ class SyncService:
             """).fetchone()
             last_sync = last_job["updated_at"] if last_job else None
 
+        cb_info = self.get_circuit_breaker_status()
+
         return {
             "is_online": self.is_online(),
             "sync_enabled": self.is_sync_enabled(),
-            "offline_simulation": self.db.get_setting("offline_simulation", "false").lower() == "true",
-            "circuit_breaker_open": self.is_circuit_breaker_open(),
+            "offline_simulation": (self.db.get_setting("offline_simulation", "false") or "false").lower() == "true",
+            "circuit_breaker_open": cb_info["state"] == "OPEN",
+            "circuit_breaker_state": cb_info["state"],
+            "circuit_breaker_cooldown_remaining": cb_info["remaining_cooldown_seconds"],
             "pending_jobs_count": pending,
             "failed_jobs_count": failed,
             "succeeded_jobs_count": succeeded,

@@ -3,6 +3,7 @@ uvicorn[standard]>=0.30.0
 pydantic>=2.8.0
 pydantic-settings>=2.4.0
 sqlalchemy>=2.0.0
+qdrant-edge-py>=0.8.0
 qdrant-client>=1.11.0
 fastembed>=0.3.0
 numpy>=1.26.0
