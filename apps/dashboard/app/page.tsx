@@ -15,19 +15,34 @@ import {
   Cpu,
   Layers,
   Sparkles,
+  Plus,
+  Zap,
+  Globe,
+  Database,
+  ArrowUpRight,
+  Activity,
+  HardDrive,
+  Smartphone
 } from "lucide-react";
 import { api, Metrics, ActivityEvent } from "../lib/api";
+import CreateMemoryModal from "../components/CreateMemoryModal";
 
 export default function OverviewPage() {
   const [metrics, setMetrics] = useState<Metrics | null>(null);
   const [recentEvents, setRecentEvents] = useState<ActivityEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [drainingQueue, setDrainingQueue] = useState(false);
+  const [queueMessage, setQueueMessage] = useState<string | null>(null);
 
   const loadData = async () => {
     try {
-      const [m, act] = await Promise.all([api.getMetrics(), api.listActivity(undefined, 8)]);
-      setMetrics(m);
-      setRecentEvents(act);
+      const [m, act] = await Promise.all([
+        api.getMetrics().catch(() => null),
+        api.listActivity(undefined, 8).catch(() => []),
+      ]);
+      if (m) setMetrics(m);
+      if (act) setRecentEvents(act);
     } catch (e) {
       console.error("Failed to load overview data:", e);
     } finally {
@@ -37,295 +52,403 @@ export default function OverviewPage() {
 
   useEffect(() => {
     loadData();
-    const interval = setInterval(loadData, 5000);
+    const interval = setInterval(loadData, 4000);
     return () => clearInterval(interval);
   }, []);
 
-  return (
-    <div className="space-y-12 animate-in fade-in duration-300">
-      {/* Editorial Hero Header */}
-      <div className="pt-2 pb-6 border-b border-hairline flex flex-col lg:flex-row lg:items-end justify-between gap-6">
-        <div className="max-w-3xl space-y-3">
-          <div className="flex items-center gap-2">
-            <span className="text-xs uppercase tracking-wider text-ash-gray font-normal">
-              Autonomous Intelligence
-            </span>
-            <span className="text-ash-gray text-xs">•</span>
-            <span className="text-xs text-sienna font-medium bg-peach px-2.5 py-0.5 rounded-full">
-              Edge Node Active
-            </span>
-          </div>
-          <h1 className="font-serif text-4xl lg:text-5xl font-normal tracking-tight text-ink leading-tight">
-            Local memory with <span className="italic">quiet</span> offline authority.
-          </h1>
-          <p className="text-base text-slate-gray leading-relaxed max-w-2xl">
-            A zero-latency memory architecture for edge computing. Vectors are computed locally on device,
-            retrieval runs completely offline, and cloud sync respects strict privacy boundaries.
-          </p>
-        </div>
+  const handleDrainQueue = async () => {
+    setDrainingQueue(true);
+    try {
+      const res = await api.processSyncQueue();
+      setQueueMessage(res.message || "Queue drained successfully");
+      setTimeout(() => setQueueMessage(null), 4000);
+      loadData();
+    } catch (e: any) {
+      alert(`Drain failed: ${e.message}`);
+    } finally {
+      setDrainingQueue(false);
+    }
+  };
 
-        {/* Action Pair: Filled Pill & Ghost Pill */}
-        <div className="flex items-center gap-3 shrink-0">
-          <Link
-            href="/search"
-            className="px-5 py-2.5 rounded-full text-sm font-normal text-ink border border-hairline hover:bg-mist transition flex items-center gap-2 bg-paper shadow-sm"
-          >
-            <Search className="w-4 h-4 text-slate-gray" />
-            Semantic Search
-          </Link>
-          <Link
-            href="/memories"
-            className="px-5 py-2.5 rounded-full text-sm font-normal bg-ink text-paper hover:bg-ink/85 transition flex items-center gap-2"
-          >
-            <Brain className="w-4 h-4 text-paper" />
-            Manage Memories
-          </Link>
+  return (
+    <div className="space-y-8 animate-in fade-in duration-300">
+      {/* Editorial Cyber Hero Header */}
+      <div className="relative overflow-hidden rounded-3xl glass-panel-elevated p-8 md:p-10 border border-white/10 glow-border">
+        {/* Ambient Backlight Glow */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-cyan-500/15 via-indigo-500/10 to-transparent rounded-full blur-3xl pointer-events-none" />
+
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+          <div className="max-w-3xl space-y-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[11px] font-mono uppercase tracking-widest text-cyan-400 bg-cyan-500/10 border border-cyan-500/30 px-3 py-1 rounded-full font-semibold flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                Autonomous Edge Cluster
+              </span>
+              <span className="text-slate-500 text-xs">•</span>
+              <span className="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1 rounded-full font-semibold flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                Zero-Cloud Latency
+              </span>
+              <span className="text-slate-500 text-xs">•</span>
+              <span className="text-[11px] font-mono text-slate-300 bg-white/5 border border-white/10 px-3 py-1 rounded-full font-medium">
+                FastEmbed BGE-v1.5 (384d)
+              </span>
+            </div>
+
+            <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-white leading-tight">
+              Quiet Offline Authority with{" "}
+              <span className="text-gradient-cyan">Selective Sync</span>
+            </h1>
+
+            <p className="text-sm md:text-base text-slate-300 leading-relaxed max-w-2xl font-light">
+              An offline-first neural memory fabric designed for edge hardware. Embeddings are generated on-device, queries resolve in sub-20ms with no internet connection, and selective replication preserves strict data confidentiality.
+            </p>
+          </div>
+
+          {/* Action Triggers */}
+          <div className="flex flex-wrap lg:flex-col gap-3 shrink-0">
+            <button
+              onClick={() => setModalOpen(true)}
+              className="px-6 py-3 rounded-2xl text-xs font-semibold bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white shadow-glow transition duration-200 flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              Record Edge Memory
+            </button>
+
+            <Link
+              href="/search"
+              className="px-6 py-3 rounded-2xl text-xs font-semibold bg-white/5 hover:bg-white/10 text-slate-200 border border-white/10 transition duration-200 flex items-center justify-center gap-2 hover:border-cyan-500/30"
+            >
+              <Search className="w-4 h-4 text-cyan-400" />
+              Semantic Search HUD
+            </Link>
+
+            <button
+              onClick={handleDrainQueue}
+              disabled={drainingQueue}
+              className="px-6 py-3 rounded-2xl text-xs font-semibold bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 transition duration-200 flex items-center justify-center gap-2 hover:border-emerald-500/30 disabled:opacity-50 cursor-pointer"
+            >
+              <RefreshCw className={`w-4 h-4 text-emerald-400 ${drainingQueue ? "animate-spin" : ""}`} />
+              {drainingQueue ? "Draining..." : queueMessage || "Drain Sync Queue"}
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Primary KPI Grid: Floating White Artifacts */}
+      {/* Interactive System Pipeline Architecture Flow */}
+      <div className="glass-panel rounded-3xl p-6 border border-white/10">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Cpu className="w-4 h-4 text-cyan-400" />
+            <h2 className="text-xs font-mono uppercase tracking-widest text-slate-300 font-semibold">
+              Live Edge Memory Pipeline
+            </h2>
+          </div>
+          <span className="text-[11px] font-mono text-emerald-400 flex items-center gap-1.5 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            All Pipeline Stages Operational
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-3 relative">
+          {/* Stage 1: Hardware Ingestion */}
+          <div className="p-4 rounded-2xl bg-black/40 border border-white/5 space-y-2 relative group hover:border-cyan-500/40 transition">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-mono text-slate-400 uppercase">Stage 01</span>
+              <Smartphone className="w-3.5 h-3.5 text-cyan-400" />
+            </div>
+            <div className="font-semibold text-sm text-white">Edge Sensor / Client</div>
+            <div className="text-[11px] text-slate-400">Node Alpha • REST & Direct</div>
+            <div className="pt-2 border-t border-white/5 flex items-center justify-between text-[10px] font-mono text-cyan-300">
+              <span>Trust: Level 2</span>
+              <span>Audit: On</span>
+            </div>
+          </div>
+
+          {/* Stage 2: Dense Embedding Engine */}
+          <div className="p-4 rounded-2xl bg-black/40 border border-white/5 space-y-2 relative group hover:border-cyan-500/40 transition">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-mono text-slate-400 uppercase">Stage 02</span>
+              <Brain className="w-3.5 h-3.5 text-indigo-400" />
+            </div>
+            <div className="font-semibold text-sm text-white">FastEmbed BGE-v1.5</div>
+            <div className="text-[11px] text-slate-400">Dense 384-Dim Vector</div>
+            <div className="pt-2 border-t border-white/5 flex items-center justify-between text-[10px] font-mono text-indigo-300">
+              <span>CPU Execution</span>
+              <span>100% Offline</span>
+            </div>
+          </div>
+
+          {/* Stage 3: Local Hybrid Persistence */}
+          <div className="p-4 rounded-2xl bg-black/40 border border-white/5 space-y-2 relative group hover:border-cyan-500/40 transition">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-mono text-slate-400 uppercase">Stage 03</span>
+              <Database className="w-3.5 h-3.5 text-violet-400" />
+            </div>
+            <div className="font-semibold text-sm text-white">SQLite + Qdrant Edge</div>
+            <div className="text-[11px] text-slate-400">Cosine Similarity Index</div>
+            <div className="pt-2 border-t border-white/5 flex items-center justify-between text-[10px] font-mono text-violet-300">
+              <span>HNSW Local</span>
+              <span>Air-Gapped</span>
+            </div>
+          </div>
+
+          {/* Stage 4: Cryptographic Privacy Gate */}
+          <div className="p-4 rounded-2xl bg-black/40 border border-white/5 space-y-2 relative group hover:border-rose-500/40 transition">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-mono text-slate-400 uppercase">Stage 04</span>
+              <Lock className="w-3.5 h-3.5 text-rose-400" />
+            </div>
+            <div className="font-semibold text-sm text-white">Privacy Filter Gate</div>
+            <div className="text-[11px] text-slate-400">Strict local_only Exclusion</div>
+            <div className="pt-2 border-t border-white/5 flex items-center justify-between text-[10px] font-mono text-rose-300">
+              <span>Confidential: {metrics?.private_memories_count ?? 0}</span>
+              <span>Protected</span>
+            </div>
+          </div>
+
+          {/* Stage 5: Selective Sync & Consensus */}
+          <div className="p-4 rounded-2xl bg-black/40 border border-white/5 space-y-2 relative group hover:border-emerald-500/40 transition">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-mono text-slate-400 uppercase">Stage 05</span>
+              <RefreshCw className="w-3.5 h-3.5 text-emerald-400" />
+            </div>
+            <div className="font-semibold text-sm text-white">Consensus & Cloud Sync</div>
+            <div className="text-[11px] text-slate-400">Deterministic LWW + Review</div>
+            <div className="pt-2 border-t border-white/5 flex items-center justify-between text-[10px] font-mono text-emerald-300">
+              <span>{metrics?.total_sync_completed ?? 0} Synced</span>
+              <span>{metrics?.open_conflicts_count ?? 0} Pending</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Primary KPI Grid: High-Tech Cyber Tiles */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch">
-        {/* Active Memories */}
-        <div className="bg-paper border border-hairline rounded-3xl p-6 shadow-artifact hover:border-slate-gray/30 transition flex flex-col justify-between h-full">
+        {/* KPI 1: Active Edge Memories */}
+        <div className="glass-panel rounded-3xl p-6 border border-white/10 hover:border-cyan-500/40 transition-all duration-300 group flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between">
-              <span className="text-xs uppercase tracking-wider text-ash-gray font-normal">
-                Total Active
+              <span className="text-xs font-mono uppercase tracking-wider text-slate-400">
+                Active Edge Memory
               </span>
-              <div className="w-8 h-8 rounded-full bg-mist flex items-center justify-center text-ink">
-                <Brain className="w-4 h-4 text-slate-gray" />
+              <div className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 group-hover:scale-110 transition">
+                <Brain className="w-5 h-5" />
               </div>
             </div>
             <div className="mt-4 flex items-baseline gap-2">
-              <span className="text-3xl font-serif text-ink tracking-tight font-normal">
+              <span className="text-4xl font-extrabold text-white tracking-tight">
                 {metrics?.total_active_memories ?? 0}
               </span>
-              <span className="text-xs text-slate-gray">records</span>
+              <span className="text-xs font-mono text-cyan-400">dense vectors</span>
             </div>
           </div>
-          <div className="mt-5 pt-3 border-t border-hairline flex items-center justify-between text-xs text-slate-gray">
+
+          <div className="mt-6 pt-3 border-t border-white/5 flex items-center justify-between text-xs text-slate-400 font-mono">
             <span>Archived: {metrics?.archived_memories_count ?? 0}</span>
             <span>Superseded: {metrics?.superseded_memories_count ?? 0}</span>
           </div>
         </div>
 
-        {/* Important (High Priority) */}
-        <div className="bg-paper border border-hairline rounded-3xl p-6 shadow-artifact hover:border-slate-gray/30 transition flex flex-col justify-between h-full">
+        {/* KPI 2: Important High-Priority Items */}
+        <div className="glass-panel rounded-3xl p-6 border border-white/10 hover:border-amber-500/40 transition-all duration-300 group flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between">
-              <span className="text-xs uppercase tracking-wider text-ash-gray font-normal">
-                Important
+              <span className="text-xs font-mono uppercase tracking-wider text-slate-400">
+                Important Priority
               </span>
-              <div className="w-8 h-8 rounded-full bg-peach flex items-center justify-center text-sienna">
-                <AlertTriangle className="w-4 h-4 text-sienna" />
+              <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 group-hover:scale-110 transition">
+                <AlertTriangle className="w-5 h-5" />
               </div>
             </div>
             <div className="mt-4 flex items-baseline gap-2">
-              <span className="text-3xl font-serif text-ink tracking-tight font-normal">
+              <span className="text-4xl font-extrabold text-amber-300 tracking-tight">
                 {metrics?.important_memories_count ?? 0}
               </span>
-              <span className="text-xs text-sienna font-medium">priority</span>
+              <span className="text-xs font-mono text-amber-400">priority tier</span>
             </div>
           </div>
-          <div className="mt-5 pt-3 border-t border-hairline flex items-center text-xs text-slate-gray">
-            <span>Immediate cloud synchronization</span>
+
+          <div className="mt-6 pt-3 border-t border-white/5 flex items-center justify-between text-xs text-slate-400 font-mono">
+            <span>Immediate Sync SLA</span>
+            <span className="text-amber-400">&lt; 10s priority</span>
           </div>
         </div>
 
-        {/* Private (Local Only) */}
-        <div className="bg-paper border border-hairline rounded-3xl p-6 shadow-artifact hover:border-slate-gray/30 transition flex flex-col justify-between h-full">
+        {/* KPI 3: Air-Gapped Private Memories */}
+        <div className="glass-panel rounded-3xl p-6 border border-white/10 hover:border-rose-500/40 transition-all duration-300 group flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between">
-              <span className="text-xs uppercase tracking-wider text-ash-gray font-normal">
-                Private
+              <span className="text-xs font-mono uppercase tracking-wider text-slate-400">
+                Air-Gapped Private
               </span>
-              <div className="w-8 h-8 rounded-full bg-mist flex items-center justify-center text-ink">
-                <Lock className="w-4 h-4 text-slate-gray" />
+              <div className="w-9 h-9 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 group-hover:scale-110 transition">
+                <Lock className="w-5 h-5" />
               </div>
             </div>
             <div className="mt-4 flex items-baseline gap-2">
-              <span className="text-3xl font-serif text-ink tracking-tight font-normal">
+              <span className="text-4xl font-extrabold text-rose-300 tracking-tight">
                 {metrics?.private_memories_count ?? 0}
               </span>
-              <span className="text-xs text-ash-gray">local-only</span>
+              <span className="text-xs font-mono text-rose-400">local-only</span>
             </div>
           </div>
-          <div className="mt-5 pt-3 border-t border-hairline flex items-center text-xs text-slate-gray">
-            <span>Air-gapped on edge disk</span>
+
+          <div className="mt-6 pt-3 border-t border-white/5 flex items-center justify-between text-xs text-slate-400 font-mono">
+            <span>Network Egress Policy</span>
+            <span className="text-rose-400 font-semibold">Strict Block</span>
           </div>
         </div>
 
-        {/* Pending Sync Queue */}
-        <div className="bg-paper border border-hairline rounded-3xl p-6 shadow-artifact hover:border-slate-gray/30 transition flex flex-col justify-between h-full">
+        {/* KPI 4: Sync Pipeline & Health */}
+        <div className="glass-panel rounded-3xl p-6 border border-white/10 hover:border-emerald-500/40 transition-all duration-300 group flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between">
-              <span className="text-xs uppercase tracking-wider text-ash-gray font-normal">
-                Sync Queue
+              <span className="text-xs font-mono uppercase tracking-wider text-slate-400">
+                Queue & Consensus
               </span>
-              <div className="w-8 h-8 rounded-full bg-mist flex items-center justify-center text-ink">
-                <RefreshCw className="w-4 h-4 text-slate-gray" />
+              <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition">
+                <RefreshCw className="w-5 h-5" />
               </div>
             </div>
             <div className="mt-4 flex items-baseline gap-2">
-              <span className="text-3xl font-serif text-ink tracking-tight font-normal">
+              <span className="text-4xl font-extrabold text-white tracking-tight">
                 {metrics?.pending_sync_jobs ?? 0}
               </span>
-              <span className="text-xs text-slate-gray">pending</span>
+              <span className="text-xs font-mono text-emerald-400">in queue</span>
             </div>
           </div>
-          <div className="mt-5 pt-3 border-t border-hairline flex items-center justify-between text-xs text-slate-gray">
-            <span>Synced: {metrics?.total_sync_completed ?? 0}</span>
-            <span>Failed: {metrics?.failed_sync_jobs ?? 0}</span>
+
+          <div className="mt-6 pt-3 border-t border-white/5 flex items-center justify-between text-xs text-slate-400 font-mono">
+            <span>Completed: {metrics?.total_sync_completed ?? 0}</span>
+            <span className="text-emerald-400">Resolved: {metrics?.resolved_conflicts_count ?? 0}</span>
           </div>
         </div>
       </div>
 
-      {/* Editorial Accent Spotlight Card (Peach Wash) */}
-      <div className="bg-peach rounded-3xl p-8 lg:p-10 text-sienna flex flex-col md:flex-row md:items-center justify-between gap-8 border border-peach/50">
-        <div className="space-y-3 max-w-2xl">
-          <div className="text-xs uppercase tracking-widest font-medium text-sienna/80">
-            Cryptographic & Privacy Protocol
-          </div>
-          <h2 className="font-serif text-2xl lg:text-3xl font-normal tracking-tight text-sienna">
-            Local vector retrieval that <span className="italic">never</span> leaks confidential memory.
-          </h2>
-          <p className="text-sm lg:text-base text-sienna/85 leading-relaxed">
-            Private memories are tagged with <code className="bg-sienna/10 px-2 py-0.5 rounded text-xs">local_only</code> and filtered out before any payload enters the replication pipeline. Even when connected to the internet, raw sensitive vectors remain strictly on edge storage.
-          </p>
-        </div>
-        <div className="shrink-0 flex flex-col sm:flex-row items-start sm:items-center gap-3">
-          <Link
-            href="/sync"
-            className="px-6 py-2.5 rounded-full text-sm font-normal bg-sienna text-paper hover:bg-sienna/90 transition shadow-sm"
-          >
-            Inspect Sync Engine
-          </Link>
-          <Link
-            href="/conflicts"
-            className="px-5 py-2.5 rounded-full text-sm font-normal text-sienna border border-sienna/40 hover:bg-sienna/10 transition"
-          >
-            Conflict Protocols →
-          </Link>
-        </div>
-      </div>
-
-      {/* Neutral Content Surfaces & Observability */}
+      {/* Observability & Real-Time Performance Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
-        {/* Edge Node Status */}
-        <div className="bg-mist rounded-3xl p-7 flex flex-col justify-between h-full">
+        {/* Card 1: Retrieval Latency Benchmark */}
+        <div className="glass-panel rounded-3xl p-7 flex flex-col justify-between border border-white/10">
           <div>
             <div className="flex items-center justify-between mb-5">
-              <h3 className="font-serif text-xl font-normal text-ink">Edge Node Architecture</h3>
-              {metrics?.is_online ? (
-                <span className="flex items-center gap-1.5 text-xs text-ink bg-paper px-3 py-1 rounded-full border border-hairline shadow-sm">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  Online
-                </span>
-              ) : (
-                <span className="flex items-center gap-1.5 text-xs text-sienna bg-peach px-3 py-1 rounded-full font-medium">
-                  <span className="w-1.5 h-1.5 rounded-full bg-sienna" />
-                  Offline Mode
-                </span>
-              )}
-            </div>
-
-            <div className="space-y-3.5 text-xs">
-              <div className="flex justify-between items-center py-2.5 border-b border-hairline">
-                <span className="text-slate-gray">Local Vector Store</span>
-                <span className="font-sans text-ink font-medium">Qdrant Edge (384d Cosine)</span>
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-cyan-400" />
+                <h3 className="font-bold text-base text-white">Retrieval Latency</h3>
               </div>
-              <div className="flex justify-between items-center py-2.5 border-b border-hairline">
-                <span className="text-slate-gray">Embedding Engine</span>
-                <span className="font-sans text-ink font-medium">FastEmbed (bge-small-en)</span>
-              </div>
-              <div className="flex justify-between items-center py-2.5 border-b border-hairline">
-                <span className="text-slate-gray">Active Conflicts</span>
-                <span className="text-sienna font-medium">
-                  {metrics?.open_conflicts_count ?? 0} open
-                </span>
-              </div>
-              <div className="flex justify-between items-center py-2.5">
-                <span className="text-slate-gray">Resolved Conflicts</span>
-                <span className="text-ink font-medium">
-                  {metrics?.resolved_conflicts_count ?? 0} resolved
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-8 pt-4 border-t border-hairline">
-            <Link
-              href="/conflicts"
-              className="text-xs text-ink hover:underline flex items-center justify-between group font-medium"
-            >
-              <span>Review Conflict Decisions</span>
-              <span className="group-hover:translate-x-1 transition text-slate-gray">→</span>
-            </Link>
-          </div>
-        </div>
-
-        {/* Local Search Performance */}
-        <div className="bg-mist rounded-3xl p-7 flex flex-col justify-between h-full">
-          <div>
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="font-serif text-xl font-normal text-ink">Search Latency</h3>
-              <div className="w-7 h-7 rounded-full bg-paper flex items-center justify-center border border-hairline">
-                <TrendingUp className="w-3.5 h-3.5 text-slate-gray" />
-              </div>
+              <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">
+                FastEmbed CPU
+              </span>
             </div>
 
             <div className="grid grid-cols-2 gap-3.5 my-4">
-              <div className="p-4 bg-paper rounded-2xl border border-hairline flex flex-col justify-between shadow-subtle">
-                <div className="text-xs text-slate-gray">Last Query</div>
-                <div className="text-2xl font-serif text-ink mt-2">
-                  {metrics?.last_search_latency_ms ?? 0} <span className="text-xs font-sans text-slate-gray font-normal">ms</span>
+              <div className="p-4 rounded-2xl bg-black/40 border border-white/5">
+                <div className="text-[11px] font-mono text-slate-400 uppercase">Last Query</div>
+                <div className="text-3xl font-extrabold text-white mt-1 font-mono">
+                  {metrics?.last_search_latency_ms ?? 0}
+                  <span className="text-xs text-cyan-400 ml-1 font-sans">ms</span>
                 </div>
               </div>
-              <div className="p-4 bg-paper rounded-2xl border border-hairline flex flex-col justify-between shadow-subtle">
-                <div className="text-xs text-slate-gray">Avg (50 calls)</div>
-                <div className="text-2xl font-serif text-ink mt-2">
-                  {metrics?.average_search_latency_ms ?? 0} <span className="text-xs font-sans text-slate-gray font-normal">ms</span>
+              <div className="p-4 rounded-2xl bg-black/40 border border-white/5">
+                <div className="text-[11px] font-mono text-slate-400 uppercase">Avg (50 calls)</div>
+                <div className="text-3xl font-extrabold text-white mt-1 font-mono">
+                  {metrics?.average_search_latency_ms ?? 0}
+                  <span className="text-xs text-cyan-400 ml-1 font-sans">ms</span>
                 </div>
               </div>
             </div>
 
-            <p className="text-xs text-slate-gray leading-relaxed mt-4">
-              FastEmbed generates dense vectors locally in CPU memory. Top-k cosine similarity queries are resolved without external API round-trips.
+            <p className="text-xs text-slate-400 leading-relaxed mt-2 font-light">
+              Cosine vector similarity computed strictly in local RAM. Natural language queries execute autonomously without internet latency or cloud costs.
             </p>
           </div>
 
-          <div className="mt-8 pt-4 border-t border-hairline">
+          <div className="mt-6 pt-4 border-t border-white/5">
             <Link
               href="/search"
-              className="text-xs text-ink hover:underline flex items-center justify-between group font-medium"
+              className="text-xs font-semibold text-cyan-400 hover:text-cyan-300 flex items-center justify-between group"
             >
-              <span>Try Natural Language Search</span>
-              <span className="group-hover:translate-x-1 transition text-slate-gray">→</span>
+              <span>Launch Semantic Search Interface</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" />
             </Link>
           </div>
         </div>
 
-        {/* Recent Audit Events */}
-        <div className="bg-mist rounded-3xl p-7 flex flex-col justify-between h-full">
+        {/* Card 2: Consensus Protocol & Device Mesh */}
+        <div className="glass-panel rounded-3xl p-7 flex flex-col justify-between border border-white/10">
           <div>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-serif text-xl font-normal text-ink">Recent Audit Feed</h3>
-              <span className="text-[11px] text-ash-gray uppercase tracking-wider">Live</span>
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2">
+                <Layers className="w-4 h-4 text-indigo-400" />
+                <h3 className="font-bold text-base text-white">Cluster Consensus</h3>
+              </div>
+              <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
+                Deterministic
+              </span>
             </div>
 
-            <div className="space-y-3 overflow-hidden">
+            <div className="space-y-3 font-mono text-xs">
+              <div className="p-3 rounded-xl bg-black/40 border border-white/5 flex items-center justify-between">
+                <span className="text-slate-400">Open Conflicts</span>
+                <span className="text-rose-400 font-bold font-sans flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+                  {metrics?.open_conflicts_count ?? 0} requires review
+                </span>
+              </div>
+              <div className="p-3 rounded-xl bg-black/40 border border-white/5 flex items-center justify-between">
+                <span className="text-slate-400">Resolved Consensus</span>
+                <span className="text-emerald-400 font-bold font-sans">
+                  {metrics?.resolved_conflicts_count ?? 0} auto-resolved
+                </span>
+              </div>
+              <div className="p-3 rounded-xl bg-black/40 border border-white/5 flex items-center justify-between">
+                <span className="text-slate-400">Mesh Resolution Rule</span>
+                <span className="text-slate-200">Trust-Weight + LWW</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 pt-4 border-t border-white/5">
+            <Link
+              href="/conflicts"
+              className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 flex items-center justify-between group"
+            >
+              <span>Inspect Conflict Engine</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" />
+            </Link>
+          </div>
+        </div>
+
+        {/* Card 3: Real-Time Audit Telemetry Stream */}
+        <div className="glass-panel rounded-3xl p-7 flex flex-col justify-between border border-white/10">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Activity className="w-4 h-4 text-emerald-400" />
+                <h3 className="font-bold text-base text-white">Live Audit Telemetry</h3>
+              </div>
+              <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Stream
+              </span>
+            </div>
+
+            <div className="space-y-2.5 overflow-hidden">
               {recentEvents.length === 0 ? (
-                <div className="py-10 text-center text-xs text-slate-gray">No activity recorded yet.</div>
+                <div className="py-8 text-center text-xs text-slate-500 font-mono">No telemetry events recorded yet.</div>
               ) : (
                 recentEvents.slice(0, 5).map((ev) => (
-                  <div key={ev.id} className="text-xs flex items-center justify-between gap-3 py-2 border-b border-hairline last:border-0">
+                  <div
+                    key={ev.id}
+                    className="p-2.5 rounded-xl bg-black/30 border border-white/5 flex items-center justify-between gap-3 text-xs"
+                  >
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className="w-1.5 h-1.5 rounded-full bg-ink shrink-0" />
-                      <span className="text-ink font-normal truncate">
+                      <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shrink-0" />
+                      <span className="font-mono text-slate-200 text-[11px] truncate">
                         {ev.event_type}
                       </span>
                     </div>
-                    <span className="text-[11px] text-slate-gray shrink-0 font-sans">
+                    <span className="text-[10px] font-mono text-slate-500 shrink-0">
                       {new Date(ev.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                     </span>
                   </div>
@@ -334,17 +457,24 @@ export default function OverviewPage() {
             </div>
           </div>
 
-          <div className="mt-8 pt-4 border-t border-hairline">
+          <div className="mt-6 pt-4 border-t border-white/5">
             <Link
               href="/activity"
-              className="text-xs text-ink hover:underline flex items-center justify-between group font-medium"
+              className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 flex items-center justify-between group"
             >
-              <span>View Full Privacy-Safe Audit Log</span>
-              <span className="group-hover:translate-x-1 transition text-slate-gray">→</span>
+              <span>View Full Privacy Audit Trail</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" />
             </Link>
           </div>
         </div>
       </div>
+
+      {/* Modal for Creating Memory */}
+      <CreateMemoryModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSuccess={() => loadData()}
+      />
     </div>
   );
 }

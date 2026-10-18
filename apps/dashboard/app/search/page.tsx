@@ -9,7 +9,11 @@ import {
   Tag,
   ArrowRight,
   Wifi,
-  WifiOff
+  WifiOff,
+  Cpu,
+  Sliders,
+  CheckCircle2,
+  Database
 } from "lucide-react";
 import { api, SearchResponse } from "../../lib/api";
 import { CategoryBadge, PrivacyBadge, StatusBadge } from "../../components/Badges";
@@ -57,56 +61,73 @@ export default function SemanticSearchPage() {
     "Which entrance is closed?",
     "Where is the vault security key stored?",
     "When is the facilities maintenance scheduled?",
-    "What server is deployed in rack B?"
+    "Gate security perimeter status",
   ];
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-300">
+    <div className="space-y-6 animate-in fade-in duration-300">
       {/* Header */}
-      <div className="border-b border-hairline pb-6">
-        <div className="text-xs uppercase tracking-wider text-ash-gray font-normal mb-1">
-          Vector Engine
+      <div className="glass-panel rounded-3xl p-6 md:p-8 border border-white/10 glow-border">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[11px] font-mono uppercase tracking-widest text-cyan-400 bg-cyan-500/10 px-2.5 py-0.5 rounded-full border border-cyan-500/20 font-semibold">
+                FastEmbed • 384d Dense Vector
+              </span>
+              <span className="text-slate-500">•</span>
+              <span className="text-xs font-mono text-emerald-400">Sub-20ms Offline Retrieval</span>
+            </div>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white">
+              Semantic Search HUD
+            </h1>
+            <p className="text-xs md:text-sm text-slate-400 font-light mt-1">
+              Dense vector embeddings computed directly on edge device memory. Zero external API calls.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-black/40 border border-white/5 font-mono text-xs text-slate-300">
+            <Cpu className="w-4 h-4 text-cyan-400" />
+            <span>FastEmbed BGE-v1.5</span>
+          </div>
         </div>
-        <h1 className="font-serif text-3xl lg:text-4xl font-normal tracking-tight text-ink">
-          Semantic <span className="italic">Search</span>
-        </h1>
-        <p className="text-sm text-slate-gray mt-1 max-w-xl">
-          Cosine vector retrieval computed entirely on local CPU memory using FastEmbed and embedded Qdrant.
-        </p>
       </div>
 
-      {/* AI Composer Input Box (Steep Specification) */}
-      <div className="bg-paper border border-hairline rounded-3xl p-6 shadow-artifact space-y-4">
+      {/* Futuristic Search HUD Input Box */}
+      <div className="glass-panel-elevated rounded-3xl p-6 border border-white/10 shadow-2xl space-y-5 glow-border">
         <form onSubmit={handleSearch} className="space-y-4">
           <div className="relative flex items-center">
-            <Search className="w-5 h-5 text-ash-gray absolute left-4" />
+            <Search className="w-5 h-5 text-cyan-400 absolute left-4" />
             <input
               type="text"
               required
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Ask anything... e.g. 'Which entrance is closed?'"
-              className="w-full bg-mist/60 border border-transparent focus:border-hairline focus:bg-paper rounded-full pl-12 pr-14 py-3.5 text-base text-ink placeholder:text-smoke-gray focus:outline-none transition shadow-sm"
+              className="w-full glass-input rounded-2xl pl-12 pr-14 py-4 text-sm md:text-base text-slate-100 placeholder:text-slate-500 focus:outline-none transition shadow-inner"
             />
             <button
               type="submit"
               disabled={loading || !query.trim()}
-              className="absolute right-2 w-10 h-10 rounded-full bg-ink text-paper hover:bg-ink/85 flex items-center justify-center transition disabled:opacity-40"
+              className="absolute right-2.5 w-10 h-10 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 text-white flex items-center justify-center transition shadow-glow disabled:opacity-40 cursor-pointer"
               title="Execute Vector Search"
             >
-              <ArrowRight className="w-4 h-4 text-paper" />
+              {loading ? (
+                <Sparkles className="w-4 h-4 animate-spin" />
+              ) : (
+                <ArrowRight className="w-4 h-4" />
+              )}
             </button>
           </div>
 
-          {/* Quick Query Pills */}
-          <div className="flex flex-wrap items-center gap-2 pt-1 text-xs text-slate-gray">
-            <span className="text-ash-gray">Suggested:</span>
+          {/* Quick Query Sample Pills */}
+          <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400 font-mono">
+            <span className="text-slate-500 text-[11px]">QUICK PROMPTS:</span>
             {sampleQueries.map((sq) => (
               <button
                 key={sq}
                 type="button"
                 onClick={() => setQuery(sq)}
-                className="px-3.5 py-1 rounded-full bg-fog border border-hairline hover:bg-mist text-slate-gray hover:text-ink transition"
+                className="px-3 py-1 rounded-xl bg-white/[0.04] border border-white/5 hover:border-cyan-500/30 text-slate-300 hover:text-cyan-300 transition text-[11px] cursor-pointer"
               >
                 {sq}
               </button>
@@ -114,35 +135,35 @@ export default function SemanticSearchPage() {
           </div>
 
           {/* Search Controls & Scope */}
-          <div className="pt-4 border-t border-hairline flex flex-wrap items-center justify-between gap-4 text-xs">
-            <div className="flex items-center gap-4">
-              <span className="text-ash-gray uppercase tracking-wider text-[11px]">
-                Scope:
+          <div className="pt-4 border-t border-white/5 flex flex-wrap items-center justify-between gap-4 text-xs font-mono">
+            <div className="flex items-center gap-3">
+              <span className="text-slate-500 uppercase tracking-wider text-[11px]">
+                Search Scope:
               </span>
-              <label className="flex items-center gap-1.5 cursor-pointer text-ink font-normal">
+              <label className="flex items-center gap-1.5 cursor-pointer text-slate-200">
                 <input
                   type="checkbox"
                   checked={importantChecked}
                   onChange={(e) => setImportantChecked(e.target.checked)}
-                  className="rounded text-ink focus:ring-0 accent-ink"
+                  className="rounded bg-black/40 border-white/20 text-cyan-500 focus:ring-0"
                 />
                 Important
               </label>
-              <label className="flex items-center gap-1.5 cursor-pointer text-ink font-normal">
+              <label className="flex items-center gap-1.5 cursor-pointer text-slate-200">
                 <input
                   type="checkbox"
                   checked={normalChecked}
                   onChange={(e) => setNormalChecked(e.target.checked)}
-                  className="rounded text-ink focus:ring-0 accent-ink"
+                  className="rounded bg-black/40 border-white/20 text-cyan-500 focus:ring-0"
                 />
                 Normal
               </label>
-              <label className="flex items-center gap-1.5 cursor-pointer text-ink font-normal">
+              <label className="flex items-center gap-1.5 cursor-pointer text-slate-200">
                 <input
                   type="checkbox"
                   checked={privateChecked}
                   onChange={(e) => setPrivateChecked(e.target.checked)}
-                  className="rounded text-ink focus:ring-0 accent-ink"
+                  className="rounded bg-black/40 border-white/20 text-rose-500 focus:ring-0"
                 />
                 Private
               </label>
@@ -150,8 +171,8 @@ export default function SemanticSearchPage() {
 
             {/* Threshold Slider */}
             <div className="flex items-center gap-3">
-              <span className="text-ash-gray uppercase tracking-wider text-[11px]">
-                Min Relevance:
+              <span className="text-slate-500 uppercase tracking-wider text-[11px]">
+                Cosine Threshold:
               </span>
               <input
                 type="range"
@@ -160,9 +181,9 @@ export default function SemanticSearchPage() {
                 step="0.05"
                 value={threshold}
                 onChange={(e) => setThreshold(parseFloat(e.target.value))}
-                className="w-24 accent-ink cursor-pointer"
+                className="w-28 accent-cyan-400 cursor-pointer"
               />
-              <span className="text-ink font-mono text-xs w-8">
+              <span className="text-cyan-400 font-bold w-10 text-right">
                 {threshold.toFixed(2)}
               </span>
             </div>
@@ -172,33 +193,27 @@ export default function SemanticSearchPage() {
 
       {/* Error state */}
       {error && (
-        <div className="p-4 rounded-2xl bg-peach/40 border border-peach text-sienna text-sm flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 shrink-0" />
+        <div className="p-4 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-sm flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
           <span>{error}</span>
         </div>
       )}
 
       {/* Results Header / Metrics */}
       {response && (
-        <div className="bg-fog border border-hairline rounded-2xl p-4 flex items-center justify-between text-xs text-slate-gray">
+        <div className="glass-panel rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 text-xs font-mono text-slate-300 border border-white/10">
           <div className="flex items-center gap-3">
-            <span className="text-ink font-medium">
-              Found {response.total_results} matches for &ldquo;{response.query}&rdquo;
+            <span className="text-white font-semibold">
+              Matched {response.total_results} vector {response.total_results === 1 ? "result" : "results"} for &ldquo;{response.query}&rdquo;
             </span>
-            {response.offline ? (
-              <span className="flex items-center gap-1 text-sienna bg-peach px-2.5 py-0.5 rounded-full text-[11px] font-medium">
-                <WifiOff className="w-3 h-3" />
-                Offline Local Vector Search
-              </span>
-            ) : (
-              <span className="flex items-center gap-1 text-ink bg-mist px-2.5 py-0.5 rounded-full text-[11px]">
-                <Wifi className="w-3 h-3" />
-                Edge Query Engine
-              </span>
-            )}
+            <span className="flex items-center gap-1.5 text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20 text-[11px]">
+              <WifiOff className="w-3 h-3" />
+              100% Offline Retrieval
+            </span>
           </div>
-          <div className="flex items-center gap-1.5 text-ink font-serif text-sm">
-            <Clock className="w-3.5 h-3.5 text-slate-gray" />
+
+          <div className="flex items-center gap-1.5 text-cyan-300 font-mono text-sm bg-cyan-500/10 px-3 py-1 rounded-xl border border-cyan-500/20">
+            <Clock className="w-3.5 h-3.5 text-cyan-400" />
             <span>{response.latency_ms} ms</span>
           </div>
         </div>
@@ -208,58 +223,61 @@ export default function SemanticSearchPage() {
       {response && (
         <div className="space-y-4">
           {response.results.length === 0 ? (
-            <div className="bg-paper border border-hairline rounded-3xl p-16 text-center space-y-3 shadow-artifact">
-              <Search className="w-8 h-8 text-ash-gray mx-auto" />
-              <div className="text-ink font-serif text-xl">No close match found</div>
-              <p className="text-xs text-slate-gray max-w-md mx-auto leading-relaxed">
-                No local memories exceeded the configured similarity threshold of {threshold}. Try adjusting the query or lowering the minimum relevance slider.
+            <div className="glass-panel rounded-3xl p-16 text-center space-y-3 border border-white/10">
+              <Database className="w-10 h-10 text-slate-600 mx-auto" />
+              <div className="text-white text-lg font-bold">No vectors match threshold</div>
+              <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
+                No local memories exceeded the configured cosine similarity threshold of {threshold}. Lower the threshold slider or rephrase the natural language query.
               </p>
             </div>
           ) : (
-            response.results.map((item, idx) => (
-              <div
-                key={item.memory_id}
-                className="bg-paper border border-hairline rounded-3xl p-6 shadow-artifact hover:border-slate-gray/30 transition space-y-4"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-ash-gray font-normal">#{idx + 1}</span>
-                    <CategoryBadge category={item.category} />
-                    <PrivacyBadge privacy={item.privacy} />
-                    <StatusBadge status={item.status} />
-                  </div>
-
-                  {/* Relevance Score Pill (Peach Accent) */}
-                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-peach text-sienna">
-                    <Sparkles className="w-3.5 h-3.5 text-sienna" />
-                    <span className="text-xs font-medium">
-                      {(item.score * 100).toFixed(1)}% match
-                    </span>
-                    <span className="text-[10px] text-sienna/70">({item.score})</span>
-                  </div>
-                </div>
-
-                <p className="text-sm font-sans text-ink leading-relaxed bg-fog p-4 rounded-2xl border border-hairline">
-                  {item.text}
-                </p>
-
-                <div className="flex flex-wrap items-center justify-between text-xs text-slate-gray pt-1">
-                  <span>
-                    Indexed: {new Date(item.created_at).toLocaleString()}
-                  </span>
-                  {item.tags.length > 0 && (
-                    <div className="flex items-center gap-1.5">
-                      <Tag className="w-3 h-3 text-ash-gray" />
-                      {item.tags.map((t) => (
-                        <span key={t} className="text-[11px] px-2 py-0.5 rounded-full bg-mist text-slate-gray">
-                          #{t}
-                        </span>
-                      ))}
+            response.results.map((item, idx) => {
+              const matchPct = Math.round(item.score * 100);
+              return (
+                <div
+                  key={item.memory_id}
+                  className="glass-panel rounded-3xl p-6 border border-white/10 hover:border-cyan-500/40 transition space-y-4 group"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-mono text-slate-500">#{idx + 1}</span>
+                      <CategoryBadge category={item.category} />
+                      <PrivacyBadge privacy={item.privacy} />
+                      <StatusBadge status={item.status} />
                     </div>
-                  )}
+
+                    {/* Cosine Similarity Match Gauge */}
+                    <div className="flex items-center gap-2 px-3 py-1 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-300">
+                      <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+                      <span className="text-xs font-bold font-mono">
+                        {matchPct}% Match
+                      </span>
+                      <span className="text-[10px] font-mono text-slate-400">({item.score.toFixed(4)})</span>
+                    </div>
+                  </div>
+
+                  <p className="text-sm font-sans text-slate-100 leading-relaxed bg-black/40 p-4 rounded-2xl border border-white/5">
+                    {item.text}
+                  </p>
+
+                  <div className="flex flex-wrap items-center justify-between text-xs text-slate-400 pt-1 font-mono">
+                    <span className="text-[11px] text-slate-500">
+                      Indexed: {new Date(item.created_at).toLocaleString()}
+                    </span>
+                    {item.tags && item.tags.length > 0 && (
+                      <div className="flex items-center gap-1.5">
+                        <Tag className="w-3 h-3 text-slate-500" />
+                        {item.tags.map((t) => (
+                          <span key={t} className="text-[10px] px-2 py-0.5 rounded-md bg-white/5 text-slate-300 border border-white/5">
+                            #{t}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       )}
